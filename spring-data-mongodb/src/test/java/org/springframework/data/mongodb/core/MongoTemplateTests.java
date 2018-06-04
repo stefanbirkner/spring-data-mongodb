@@ -26,6 +26,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 import static org.springframework.data.mongodb.core.query.Update.*;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -37,6 +38,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import lombok.experimental.Wither;
 import org.bson.types.ObjectId;
 import org.hamcrest.collection.IsMapContaining;
 import org.joda.time.DateTime;
@@ -1632,6 +1634,21 @@ public class MongoTemplateTests {
 		template.insertAll(Arrays.asList(person));
 
 		assertThat(person.version, is(0));
+	}
+
+	@Test // DATAMONGO-1992
+	public void initializesIdAndVersionAndOfImmutableObject() {
+
+		ImmutableVersioned versioned = new ImmutableVersioned();
+
+		ImmutableVersioned saved = template.insert(versioned);
+
+		assertThat(saved, is(not(sameInstance(versioned))));
+		assertThat(versioned.id, is(nullValue()));
+		assertThat(versioned.version, is(nullValue()));
+
+		assertThat(saved.id, is(notNullValue()));
+		assertThat(saved.version, is(0L));
 	}
 
 	@Test(expected = IllegalArgumentException.class) // DATAMONGO-568, DATAMONGO-1762
@@ -3808,5 +3825,18 @@ public class MongoTemplateTests {
 			return "Message [id=" + id + ", text=" + text + ", timestamp=" + timestamp + "]";
 		}
 
+	}
+
+	@AllArgsConstructor
+	@Wither
+	static class ImmutableVersioned {
+
+		final @Id String id;
+		final @Version Long version;
+
+		public ImmutableVersioned() {
+			id = null;
+			version = null;
+		}
 	}
 }
