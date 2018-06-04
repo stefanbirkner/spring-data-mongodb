@@ -21,7 +21,10 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.Wither;
+import org.springframework.data.annotation.Version;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -725,6 +728,23 @@ public class ReactiveMongoTemplateTests {
 		assertThat(person.version, is(0));
 	}
 
+	@Test // DATAMONGO-1992
+	public void initializesIdAndVersionAndOfImmutableObject() {
+
+		ImmutableVersioned versioned = new ImmutableVersioned();
+
+		StepVerifier.create(template.insert(versioned)).consumeNextWith(actual -> {
+
+			assertThat(actual, is(not(sameInstance(versioned))));
+			assertThat(versioned.id, is(nullValue()));
+			assertThat(versioned.version, is(nullValue()));
+
+			assertThat(actual.id, is(notNullValue()));
+			assertThat(actual.version, is(0L));
+
+		}).verifyComplete();
+	}
+
 	@Test // DATAMONGO-1444
 	public void queryCanBeNull() {
 
@@ -1163,6 +1183,19 @@ public class ReactiveMongoTemplateTests {
 		p.setAge(age);
 
 		return p;
+	}
+
+	@AllArgsConstructor
+	@Wither
+	static class ImmutableVersioned {
+
+		final @Id String id;
+		final @Version Long version;
+
+		public ImmutableVersioned() {
+			id = null;
+			version = null;
+		}
 	}
 
 	@Data
