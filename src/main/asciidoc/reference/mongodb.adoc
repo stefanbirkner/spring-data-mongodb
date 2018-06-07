@@ -797,7 +797,7 @@ The following example shows how to save a document and retrieving its contents:
 [source,java]
 ----
 import static org.springframework.data.mongodb.core.query.Criteria.where;
-import static org.springframework.data.mongodb.core.query.Criteria.query;
+import static org.springframework.data.mongodb.core.query.Query.query;
 …
 
 Person p = new Person("Bob", 33);
